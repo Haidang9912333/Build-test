@@ -4,20 +4,17 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04 # Đã cập nhật lên bản mới nhất
+    runs-on: ubuntu-22.04
     steps:
-      - name: Checkout Kernel Source
-        uses: actions/checkout@v4
-        with:
-          repository: MiCode/Xiaomi_Kernel_OpenSource
-          ref: angelica-q-oss
+      # Bước này đã được thay đổi để tránh lỗi Git không tìm thấy nhánh
+      - name: Clone Kernel Source
+        run: |
+          git clone --depth=1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b angelica-q-oss .
 
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc build-essential bison flex libssl-dev libncurses5-dev
-          # Cài thêm thư viện để chạy được toolchain 32-bit cũ trên Ubuntu mới
-          sudo apt-get install -y lib32z1 lib32ncurses6 lib32stdc++6
+          sudo apt-get install -y bc build-essential bison flex libssl-dev libncurses5-dev lib32z1 lib32ncurses6 lib32stdc++6
 
       - name: Setup Toolchain (GCC 4.9)
         run: |
@@ -28,7 +25,9 @@ jobs:
 
       - name: Mod Config for Docker
         run: |
-          CONF=arch/arm64/configs/angelica_defconfig
+          # Tìm file config chính xác trong thư mục arch/arm64/configs/
+          CONF=$(find arch/arm64/configs/ -name "angelica_defconfig" | head -n 1)
+          echo "Đang cấu hình file: $CONF"
           echo "CONFIG_NAMESPACES=y" >> $CONF
           echo "CONFIG_NET_NS=y" >> $CONF
           echo "CONFIG_PID_NS=y" >> $CONF
@@ -51,11 +50,14 @@ jobs:
           export CROSS_COMPILE=aarch64-linux-android-
           export CROSS_COMPILE_ARM32=arm-linux-androideabi-
           
-          make O=out angelica_defconfig
+          # Lấy tên file config tự động
+          CONF_NAME=$(basename $(find arch/arm64/configs/ -name "angelica_defconfig" | head -n 1))
+          
+          make O=out $CONF_NAME
           make -j$(nproc --all) O=out Image.gz
 
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
-          name: Kernel_MIUI12_Docker_U22
+          name: Kernel_MIUI12_Docker_Fixed
           path: out/arch/arm64/boot/Image.gz

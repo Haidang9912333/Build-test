@@ -1,16 +1,23 @@
 name: Build_Kernel_MIUI12_Docker
 on:
-  workflow_dispatch: # Nút bấm tay để chạy
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04 # Đã cập nhật lên bản mới nhất
     steps:
       - name: Checkout Kernel Source
         uses: actions/checkout@v4
         with:
           repository: MiCode/Xiaomi_Kernel_OpenSource
-          ref: angelica-q-oss # Nhánh MIUI 12 của Redmi 9C
+          ref: angelica-q-oss
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc build-essential bison flex libssl-dev libncurses5-dev
+          # Cài thêm thư viện để chạy được toolchain 32-bit cũ trên Ubuntu mới
+          sudo apt-get install -y lib32z1 lib32ncurses6 lib32stdc++6
 
       - name: Setup Toolchain (GCC 4.9)
         run: |
@@ -22,7 +29,6 @@ jobs:
       - name: Mod Config for Docker
         run: |
           CONF=arch/arm64/configs/angelica_defconfig
-          # Thêm các dòng cấu hình cần thiết cho Docker
           echo "CONFIG_NAMESPACES=y" >> $CONF
           echo "CONFIG_NET_NS=y" >> $CONF
           echo "CONFIG_PID_NS=y" >> $CONF
@@ -51,5 +57,5 @@ jobs:
       - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
-          name: Kernel_MIUI12_Docker
+          name: Kernel_MIUI12_Docker_U22
           path: out/arch/arm64/boot/Image.gz

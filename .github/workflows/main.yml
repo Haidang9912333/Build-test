@@ -9,7 +9,7 @@ jobs:
       # Bước này đã được thay đổi để tránh lỗi Git không tìm thấy nhánh
       - name: Clone Kernel Source
         run: |
-          git clone --depth=1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b dandelion-q-oss
+          git clone --depth=1 https://github.com/MiCode/Xiaomi_Kernel_OpenSource.git -b dandelion-q-oss .
 
       - name: Install Dependencies
         run: |
